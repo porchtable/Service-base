@@ -148,7 +148,9 @@ alter table public.jobs enable row level security;
 alter table public.job_attachments enable row level security;
 alter table public.price_book_items enable row level security;
 
-grant select, insert, update, delete on public.jobs, public.job_attachments, public.price_book_items to authenticated;
+revoke all on public.jobs, public.job_attachments, public.price_book_items from authenticated;
+grant select, insert, update, delete on public.jobs, public.price_book_items to authenticated;
+grant select, insert, delete on public.job_attachments to authenticated;
 grant all on public.jobs, public.job_attachments, public.price_book_items to service_role;
 revoke all on public.jobs, public.job_attachments, public.price_book_items from anon;
 
@@ -183,3 +185,6 @@ create policy price_book_update on public.price_book_items for update to authent
   with check (app.has_role(organization_id, array['owner', 'admin']::public.member_role[]));
 create policy price_book_delete on public.price_book_items for delete to authenticated
   using (app.has_role(organization_id, array['owner', 'admin']::public.member_role[]));
+
+-- Functions in `app` are executable only where explicitly granted.
+revoke execute on all functions in schema app from public;

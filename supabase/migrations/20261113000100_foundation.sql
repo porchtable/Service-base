@@ -13,6 +13,9 @@ revoke all on all tables in schema public from anon;
 alter default privileges in schema public revoke all on tables from anon;
 alter default privileges in schema public revoke all on functions from anon;
 alter default privileges in schema public revoke all on sequences from anon;
+-- Every table must be granted to `authenticated` explicitly (least privilege);
+-- Supabase's defaults would otherwise grant ALL on each new table.
+alter default privileges in schema public revoke all on tables from authenticated;
 
 create type public.member_role as enum ('owner', 'admin', 'technician');
 create type public.industry as enum ('hvac', 'plumbing', 'electrical', 'roofing', 'general');
@@ -494,3 +497,6 @@ create policy data_requests_select on public.data_requests for select to authent
 create policy data_requests_insert on public.data_requests for insert to authenticated
   with check (user_id = auth.uid() and status = 'pending'
               and (organization_id is null or app.has_role(organization_id, array['owner', 'admin']::public.member_role[]) or kind = 'account_deletion'));
+
+-- Functions in `app` are executable only where explicitly granted above.
+revoke execute on all functions in schema app from public;

@@ -42,9 +42,16 @@ export async function proxy(request: NextRequest) {
     login.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
     return NextResponse.redirect(login);
   }
+  if (path.startsWith("/e/")) {
+    // Customer estimate links carry a secret token in the URL.
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  } else {
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  }
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   return response;
 }
 

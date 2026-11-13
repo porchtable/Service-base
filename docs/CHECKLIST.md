@@ -50,8 +50,28 @@ limited (reason given) · ⬜ not started · ⛔ blocked on an external account/
 - 🟡 Storage verified against the test-only emulator; re-verify on real Supabase Storage.
 
 ## Phase 3 — Estimates
-- ⬜ AI draft generation (structured output, price-book matching, flags), notes preserved on failure
-- ⬜ Editor, approval, server totals, versioning, immutability, secure customer links, decisions
+- ✅ Migration `20261113000300_estimates.sql`: estimates, versions, line items, access tokens,
+  decisions; state machine, immutability and approval rules enforced by triggers
+- ✅ AI drafting via Claude structured outputs (`claude-opus-5-5`, refusal fallback enabled).
+  The model never receives or returns prices; a validated builder prices lines only from
+  the active price book and flags unmatched, low-confidence, or pricing/warranty language
+- ✅ Technician notes committed before the AI call; failures are recorded, never lose data
+- ✅ Editor: price-book lines, custom lines (only owners/admins may price them), quantity
+  edits, review flags, scope of work, internal notes, per-estimate tax rate
+- ✅ Line and version totals computed in the database; re-verified independently on approval
+- ✅ Approval blocked while any line is unpriced or flagged (DB-enforced); owner/admin only
+- ✅ Send freezes a snapshot (company, customer, lines, totals, terms) whose total must match
+- ✅ Sent versions immutable for every role, including superuser; revisions create new
+  versions and supersede/revoke the previous one
+- ✅ Customer links: 256-bit random tokens, SHA-256 stored, expiring, revocable, generic
+  failure page, `no-referrer`, `noindex`, rate limited
+- ✅ Customer accept (typed name + confirmation) / decline; exactly one decision per version
+  under concurrency; decisions immutable and applied to the token's version only
+- ✅ Schema guard tests: RLS on every table, no anon grants, least-privilege grants,
+  pinned `search_path` on SECURITY DEFINER functions (found and fixed two over-broad defaults)
+- ✅ Tests: +11 DB tests, +8 AI builder unit tests, +1 e2e (full estimate lifecycle)
+- 🟡 Real Anthropic API not exercised (no key provided). AI path verified with a test
+  provider; the "not configured" failure path verified end-to-end.
 
 ## Phase 4 — Email, follow-ups, dashboard
 - ⬜ Resend transport, email events, retry, idempotency, delivery webhooks

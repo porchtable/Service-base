@@ -8,6 +8,7 @@ export const NAV: Array<{ href: string; label: string; requires?: Permission }> 
   { href: "/app", label: "Dashboard" },
   { href: "/app/customers", label: "Customers" },
   { href: "/app/jobs", label: "Jobs" },
+  { href: "/app/estimates", label: "Estimates" },
   { href: "/app/price-book", label: "Price book" },
   { href: "/app/settings", label: "Company settings", requires: "org.settings" },
   { href: "/app/settings/team", label: "Team" },

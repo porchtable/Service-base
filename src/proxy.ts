@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { AUTH_COOKIE_OPTIONS } from "@/lib/auth-cookies";
 
 const PROTECTED_PREFIXES = ["/app", "/admin", "/onboarding", "/account"];
 
@@ -20,6 +21,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const supabase = createServerClient(url, key, {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return request.cookies.getAll();

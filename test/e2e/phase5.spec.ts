@@ -1,8 +1,18 @@
 import { test, expect } from "@playwright/test";
 import Stripe from "stripe";
-import { db, fakeIp, login, registerAndVerify, signUpWithCompany, uniqueEmail } from "./helpers";
+import { EMULATOR, db, fakeIp, latestEmail, login, registerAndVerify, signUpWithCompany, uniqueEmail } from "./helpers";
 
 const WEBHOOK_SECRET = "whsec_e2e_test_secret";
+
+/** Sign up via the Supabase Auth API directly (bypassing the app's form), then confirm. */
+async function registerAndVerifyDirect(page: import("@playwright/test").Page) {
+  const email = uniqueEmail("direct");
+  const res = await page.request.post(`${EMULATOR}/auth/v1/signup`, { data: { email, password: "correct-horse-42" } });
+  expect(res.ok()).toBe(true);
+  const mail = await latestEmail(page.request, email, "confirmation");
+  await page.goto(mail.link);
+  await expect(page).toHaveURL(/\/onboarding/);
+}
 
 test("platform admin is explicit; contractors cannot reach it", async ({ browser }) => {
   const ctx = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": fakeIp() } });
@@ -35,6 +45,12 @@ test("platform admin is explicit; contractors cannot reach it", async ({ browser
   await visitor.getByLabel("Password").fill("correct-horse-42");
   await visitor.getByRole("button", { name: "Create account" }).click();
   await expect(visitor.getByText("New registrations are temporarily closed.")).toBeVisible();
+  // An account created directly through Supabase Auth still cannot create a company.
+  const direct = await anon.newPage();
+  await registerAndVerifyDirect(direct);
+  await direct.getByLabel("Company name").fill("Sneaky Co");
+  await direct.getByRole("button", { name: "Create company" }).click();
+  await expect(direct.getByText("New company registration is temporarily closed.")).toBeVisible();
   await page.locator("form").filter({ hasText: "features.signup" }).getByRole("button", { name: "Turn on" }).click();
   await expect(page.getByText("features.signup = true")).toBeVisible();
 

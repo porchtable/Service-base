@@ -8,10 +8,13 @@ import { actionContext, setActiveOrganizationCookie } from "@/server/auth/contex
 import { createOrganization, listMemberships, updateFollowUpSettings, updateOrganizationSettings } from "@/server/domain/organizations";
 import { acceptInvitation } from "@/server/domain/members";
 import { runAction, invalid, type ActionResult } from "@/server/errors";
+import { CONFIG_KEYS, getConfigBool } from "@/server/platform-config";
 
 export async function createOrganizationAction(_p: ActionResult<unknown>, fd: FormData): Promise<ActionResult<unknown>> {
   const user = await requireUser();
   const res = await runAction(async () => {
+    // Accounts can be created directly via Supabase Auth, so the switch must also gate new companies.
+    if (!(await getConfigBool(CONFIG_KEYS.signup, true))) throw invalid("New company registration is temporarily closed.");
     const orgId = await createOrganization({ userId: user.id, email: user.email }, formToObject(fd));
     await setActiveOrganizationCookie(orgId);
   });

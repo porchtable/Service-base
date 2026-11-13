@@ -137,3 +137,11 @@ limited (reason given) · ⬜ not started · ⛔ blocked on an external account/
 - ⛔ Hosting account and approval to deploy
 - ⛔ Approval of subscription plans/prices (none have been created or enabled)
 - ⛔ Generated secrets: `CRON_SECRET`, `ESTIMATE_LINK_SECRET`
+
+## Production-readiness audit (2026-11-13)
+- ✅ 9 findings fixed (2 high, 4 medium, 3 low) — details in `docs/AUDIT.md`
+- ✅ Migration `20261113000600_security_hardening.sql` (column-level grants, system-column
+  guard, totals re-derivation, FK indexes)
+- ✅ HttpOnly/Secure session cookies, baseline CSP, production-build e2e suite
+- ✅ 101/101 unit+DB, 14+1 skipped dev e2e, 9/9 production-build e2e, 0 npm vulnerabilities
+- ⬜ Invoices and customer payment collection are not built (not in original spec)

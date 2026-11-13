@@ -2,12 +2,14 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/server/env";
+import { AUTH_COOKIE_OPTIONS } from "@/lib/auth-cookies";
 
 /** Per-request Supabase client bound to the auth cookies (publishable key only). */
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   const e = env();
   return createServerClient(e.NEXT_PUBLIC_SUPABASE_URL, e.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return cookieStore.getAll();

@@ -17,6 +17,8 @@ explicit approval. This is the checklist to follow once approved.
    `<site>/auth/confirm`. Email templates: paste `supabase/templates/*.html`.
    Configure a custom SMTP (e.g. Resend) for auth emails before launch.
 5. Auth → Settings: enable email confirmations; set minimum password length ≥ 10.
+   To close registrations completely, also disable "Allow new users to sign up" there
+   (the in-app switch blocks the form and company creation, not Supabase's own API).
 6. Storage: confirm bucket `job-attachments` exists and is **private**.
 7. Database → Backups: enable PITR for production.
 

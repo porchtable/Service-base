@@ -22,6 +22,7 @@ what is implemented and verified, and what is blocked. Not production-ready; not
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | Running implementation checklist and blockers |
 | [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) | Acceptance criteria mapped to automated tests |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment preparation, pre-launch verification, monitoring |
+| [docs/AUDIT.md](docs/AUDIT.md) | Production-readiness audit: findings, fixes, untestable items |
 
 ## Stack
 
@@ -68,6 +69,7 @@ DATABASE_URL=... npm run grant-platform-admin -- operator@example.com
 npm run typecheck && npm run lint
 npm run test        # unit + database integration (needs local Postgres on :54322)
 npm run test:e2e    # Playwright (starts the app + a test-only Supabase emulator)
+npm run test:e2e:prod  # same against a real production build (next build + next start)
 ```
 
 ## Background jobs

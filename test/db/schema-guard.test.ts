@@ -43,6 +43,15 @@ describe("schema security guard", () => {
     expect(rows.map((r) => r.fn)).toEqual([]);
   });
 
+  it("has an index starting with the columns of every foreign key", async () => {
+    const rows = await adminSql`
+      select c.conrelid::regclass::text || '.' || c.conname as fk from pg_constraint c
+      where c.contype = 'f' and c.connamespace = 'public'::regnamespace
+        and not exists (select 1 from pg_index i where i.indrelid = c.conrelid
+          and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] = c.conkey)`;
+    expect(rows.map((r) => r.fk)).toEqual([]);
+  });
+
   it("does not expose helper functions to anon", async () => {
     const rows = await adminSql`
       select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace

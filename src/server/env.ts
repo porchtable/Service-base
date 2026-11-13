@@ -32,6 +32,8 @@ const schema = z.object({
   STRIPE_SECRET_KEY: optional,
   STRIPE_WEBHOOK_SECRET: optional,
   CRON_SECRET: optional,
+  /** Secret used to derive the customer link included in each queued email (stable across retries). */
+  ESTIMATE_LINK_SECRET: optional,
 });
 
 export type ServerEnv = z.infer<typeof schema>;

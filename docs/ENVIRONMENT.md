@@ -35,6 +35,26 @@ that is never committed. `.env.example` lists every variable.
 | `STRIPE_WEBHOOK_SECRET` | **no** | for billing | Signing secret of the endpoint `/api/stripe/webhook`. |
 | `ALLOW_LIVE_BILLING` | no | no | Must be `true` before a `sk_live_` key is accepted. Set only with owner approval. |
 | `CRON_SECRET` | **no** | for reminders | Random ≥32 chars. The scheduler calls `/api/cron/process-jobs` with `Authorization: Bearer <CRON_SECRET>`. |
+| `ESTIMATE_LINK_SECRET` | **no** | for email | Random ≥32 chars. Derives the customer link inside each queued email so retries are byte-identical (provider idempotency). Rotating it does not invalidate links already sent (only their hashes are stored). |
+
+## Background jobs
+
+Reminders and retries run from `/api/cron/process-jobs`. Choose one scheduler:
+
+* **Vercel Cron** — `vercel.json` schedules it every 5 minutes (requires a plan that allows
+  sub-daily crons). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically.
+* **Supabase pg_cron + pg_net** — schedule an HTTP POST to the endpoint with the header.
+* **Worker process** — `npm run worker` on any always-on host (polls every 60 s).
+
+The browser is never involved. Without a scheduler, only the first estimate email is
+sent (immediately on "Send"); reminders and retries wait until the scheduler runs.
+
+## Webhooks to register
+
+| Provider | URL | Events |
+|---|---|---|
+| Resend | `<site>/api/resend/webhook` | `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed` |
+| Stripe | `<site>/api/stripe/webhook` | see Billing section in SETUP |
 
 Only the three `NEXT_PUBLIC_*` values are ever bundled into browser code. All other
 values are read exclusively in `src/server/env.ts`, which is guarded by `server-only`.

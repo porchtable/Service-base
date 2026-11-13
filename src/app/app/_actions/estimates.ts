@@ -8,6 +8,7 @@ import {
   deleteDraftEstimate, deleteLine, reopenVersion, revokeLinks, saveDraftDetails, sendVersion, updateLine,
 } from "@/server/domain/estimates";
 import { generateDraftWithAi } from "@/server/domain/estimate-ai";
+import { processFollowUps } from "@/server/jobs/follow-ups";
 import { enforceRateLimit } from "@/server/ratelimit";
 import { runAction, type ActionResult } from "@/server/errors";
 
@@ -93,7 +94,12 @@ export async function sendAction(_p: ActionResult<unknown>, fd: FormData): Promi
   return runAction(async () => {
     const ctx = await actionContext();
     await enforceRateLimit("estimateSend", ctx.organizationId);
-    const res = await sendVersion(ctx, str(fd, "versionId"), { email: fd.get("sendEmail") === "on" });
+    const versionId = str(fd, "versionId");
+    const res = await sendVersion(ctx, versionId, { email: fd.get("sendEmail") === "on" });
+    if (res.emailQueued) {
+      // Deliver right away when possible; the scheduler retries anything that fails.
+      await processFollowUps({ versionId, limit: 2 }).catch((err) => console.error("[send] immediate delivery failed", err));
+    }
     // No revalidation here: the one-time link must stay on screen. The client refreshes on "Done".
     return { link: res.link, emailQueued: res.emailQueued };
   });

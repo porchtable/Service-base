@@ -74,9 +74,29 @@ limited (reason given) · ⬜ not started · ⛔ blocked on an external account/
   provider; the "not configured" failure path verified end-to-end.
 
 ## Phase 4 — Email, follow-ups, dashboard
-- ⬜ Resend transport, email events, retry, idempotency, delivery webhooks
-- ⬜ Follow-up queue/worker/cron, auto-cancel, manual controls
-- ⬜ Full business dashboard with filters
+- ✅ Migration `20261113000400_followups_email.sql`: follow_up_jobs queue, email_events log,
+  SKIP LOCKED claim function, stale-lock reclaim, trigger cancelling reminders when a
+  version leaves `sent`
+- ✅ Resend transport with Idempotency-Key per job; customer-facing emails show the
+  contractor's name; HTML-escaped templates; 15 s send timeout
+- ✅ Estimate email sent immediately on "Send"; automatic reminders at company-configured
+  offsets (skipped past expiry); manual "send reminder now" (throttled 1/hour)
+- ✅ Reminders cannot be sent after a decision: the send holds a share lock on the version
+  that customer decisions must wait for; decision/expiry/revision cancel pending reminders
+- ✅ Duplicate prevention: unique keys per scheduled reminder, SKIP LOCKED claiming,
+  deterministic per-job link token, crash recovery that never re-sends
+- ✅ Retries with exponential backoff (1 min → 6 h cap), max attempts, permanent-failure
+  handling, manual retry; "not configured" recorded as a failure, never as sent
+- ✅ Background execution via authenticated cron endpoint, `vercel.json`, or `npm run worker`
+- ✅ Resend delivery webhooks (signature-verified) update delivery status
+- ✅ Invitation emails sent when email is configured (link still shown to the inviter)
+- ✅ Dashboard: customers, active jobs, draft/approved/sent/pending/accepted/declined/expired,
+  total quoted, accepted value (labelled as not collected revenue), follow-ups due/failed,
+  with period and technician filters
+- ✅ Tests: +9 DB tests (scheduling, stop-on-decision, concurrent workers, crash recovery,
+  retries, unconfigured email, manual controls, dashboard vs independent SQL), +1 unit,
+  +1 e2e
+- 🟡 Resend not exercised against the real API (no key). Verified with a capture transport.
 
 ## Phase 5 — Billing, admin, deployment
 - ⬜ Stripe Checkout/portal/webhooks, plan config, enforcement

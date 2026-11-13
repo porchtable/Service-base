@@ -8,6 +8,8 @@ import { ConfigurationError } from "@/server/env";
 import { buildDraftFromProposal } from "@/server/ai/draft-builder";
 import { AiGenerationError, type CatalogItem, type EstimateAiProvider } from "@/server/ai/proposal";
 import { saveTechnicianNotes } from "@/server/domain/estimates";
+import { requireEntitlement } from "@/server/billing/entitlements";
+import { CONFIG_KEYS, getConfigBool } from "@/server/platform-config";
 
 export interface AiDraftOutcome {
   linesAdded: number;
@@ -40,7 +42,11 @@ export async function generateDraftWithAi(
 ): Promise<AiDraftOutcome> {
   assertCan(ctx, "estimate.draft");
   if (!z.uuid().safeParse(versionId).success) throw notFound("Estimate");
-  await saveTechnicianNotes(ctx, versionId, notes);
+  await saveTechnicianNotes(ctx, versionId, notes); // always persisted first
+  if (!(await getConfigBool(CONFIG_KEYS.aiDrafting, true))) {
+    throw new AppError("configuration", "AI drafting is temporarily disabled. Your notes were saved — add lines manually.");
+  }
+  await requireEntitlement(ctx.organizationId, "AI drafting");
 
   const context = await withUser(ctx, async (tx) => {
     const [row] = await tx`

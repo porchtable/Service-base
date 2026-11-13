@@ -9,10 +9,12 @@ import { clientIp, safeNextPath } from "@/server/request";
 import { runAction, invalid, type ActionResult } from "@/server/errors";
 import { env } from "@/server/env";
 import { ACTIVE_ORG_COOKIE } from "@/server/auth/context";
+import { CONFIG_KEYS, getConfigBool } from "@/server/platform-config";
 
 export async function registerAction(_prev: ActionResult<unknown>, fd: FormData): Promise<ActionResult<unknown>> {
   const result = await runAction(async () => {
     const d = registerSchema.parse(formToObject(fd));
+    if (!(await getConfigBool(CONFIG_KEYS.signup, true))) throw invalid("New registrations are temporarily closed.");
     await enforceRateLimit("register", await clientIp());
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.signUp({

@@ -6,3 +6,4 @@ process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= "test-publishable-key";
 process.env.EMAIL_TRANSPORT ??= "capture";
 process.env.EMAIL_FROM ??= "Estimates <estimates@example.test>";
 process.env.ESTIMATE_LINK_SECRET ??= "test-link-secret-0123456789abcdef0123456789";
+process.env.STRIPE_WEBHOOK_SECRET ??= "whsec_test_secret_for_unit_tests";

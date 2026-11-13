@@ -20,6 +20,8 @@ what is implemented and verified, and what is blocked. Not production-ready; not
 | [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | External accounts and environment variables |
 | [docs/TESTING.md](docs/TESTING.md) | Test suites and how they run |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | Running implementation checklist and blockers |
+| [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) | Acceptance criteria mapped to automated tests |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment preparation, pre-launch verification, monitoring |
 
 ## Stack
 
@@ -67,3 +69,8 @@ npm run typecheck && npm run lint
 npm run test        # unit + database integration (needs local Postgres on :54322)
 npm run test:e2e    # Playwright (starts the app + a test-only Supabase emulator)
 ```
+
+## Background jobs
+
+`/api/cron/process-jobs` (cron, `Authorization: Bearer $CRON_SECRET`) or `npm run worker`
+delivers estimate emails, reminders and retries and expires overdue estimates.

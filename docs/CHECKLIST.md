@@ -99,14 +99,41 @@ limited (reason given) · ⬜ not started · ⛔ blocked on an external account/
 - 🟡 Resend not exercised against the real API (no key). Verified with a capture transport.
 
 ## Phase 5 — Billing, admin, deployment
-- ⬜ Stripe Checkout/portal/webhooks, plan config, enforcement
-- ⬜ Platform administration
-- ⬜ Data export / account deletion workflows
-- ⬜ Deployment preparation & monitoring
+- ✅ Migration `20261113000500_billing_admin.sql`: billing_plans (none seeded), subscriptions,
+  stripe_events, platform_config; tenants can read but never write billing data
+- ✅ Stripe Checkout (subscription mode, optional first-time trial), Customer Portal,
+  plan prices read live from Stripe (never hardcoded); live keys refused without
+  `ALLOW_LIVE_BILLING=true`
+- ✅ Webhooks: signature-verified, exactly-once (event id recorded in the same transaction
+  as its effects), out-of-order protection, cancellation handling, audit trail
+- ✅ Feature enforcement (AI drafting, sending) when `billing.enforce_subscription` is on;
+  default **off** until plans are approved; reading/exporting never gated
+- ✅ Platform admin (explicit CLI grant only, 404 for everyone else): overview counts,
+  subscription breakdown, health (DB latency, worker heartbeat, integration status),
+  organizations, failed jobs, email failures (masked recipients), audit log (no payloads),
+  platform switches (signup, AI kill switch, billing enforcement), plan configuration,
+  account-deletion request processing
+- ✅ Data export (JSON, owner/admin, rate-limited, audited); account deletion requests with
+  orphan-protection; erasure keeps the audit trail but removes the actor reference
+- ✅ Health endpoint, error boundary, not-found page, deployment & monitoring guide
+- ✅ Tests: +12 DB tests, +3 e2e (admin access, webhook auth/idempotency, export &
+  deletion lifecycle), +1 mobile responsive e2e. Found & fixed: account deletion was
+  blocked by the append-only audit trigger.
+- 🟡 Stripe Checkout/Portal not exercised against Stripe (no account provided); webhook
+  processing verified with Stripe's own signature helpers.
 
-## Blockers requiring the owner
+## Final verification (this environment)
+- TypeScript: pass · ESLint: pass · Unit + DB integration: 86/86 · Playwright e2e:
+  13/13 (12 desktop + 1 mobile) · `next build`: pass · client bundles contain no secret
+  names or server-only modules
+- Acceptance-criteria traceability: `docs/ACCEPTANCE.md`
+- **Not production-ready yet**: see `docs/DEPLOYMENT.md` §4 (real-service verification)
+
+## Blockers requiring the owner (provide via secure environment configuration)
 - ⛔ Supabase project (URL, publishable key, secret key, DB URL)
 - ⛔ Anthropic API key
 - ⛔ Resend API key + verified sending domain
 - ⛔ Stripe test-mode account, Products/Prices you define, webhook secret
 - ⛔ Hosting account and approval to deploy
+- ⛔ Approval of subscription plans/prices (none have been created or enabled)
+- ⛔ Generated secrets: `CRON_SECRET`, `ESTIMATE_LINK_SECRET`

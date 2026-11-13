@@ -13,4 +13,7 @@ export const NAV: Array<{ href: string; label: string; requires?: Permission }> 
   { href: "/app/price-book", label: "Price book" },
   { href: "/app/settings", label: "Company settings", requires: "org.settings" },
   { href: "/app/settings/team", label: "Team" },
+  { href: "/app/billing", label: "Billing", requires: "billing.manage" },
+  { href: "/app/settings/data", label: "Data export", requires: "data.export" },
+  { href: "/app/account", label: "Your account" },
 ];

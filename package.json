@@ -15,7 +15,7 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:reset:local": "tsx scripts/db-migrate.ts --reset --compat",
     "worker": "tsx --conditions=react-server scripts/worker.ts",
-    "grant-platform-admin": "tsx --conditions=react-server scripts/grant-platform-admin.ts"
+    "grant-platform-admin": "tsx scripts/grant-platform-admin.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

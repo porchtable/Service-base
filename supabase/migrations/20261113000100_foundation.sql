@@ -3,6 +3,20 @@
 -- audit log, rate limiting, platform administrators, data requests.
 -- ============================================================================
 
+-- The application connects as the migration owner (normally `postgres`) and switches
+-- to `authenticated` (RLS enforced) or `service_role` per transaction. Ensure it may.
+do $$
+begin
+  if not pg_has_role(current_user, 'authenticated', 'MEMBER') then
+    execute format('grant authenticated to %I', current_user);
+  end if;
+  if not pg_has_role(current_user, 'service_role', 'MEMBER') then
+    execute format('grant service_role to %I', current_user);
+  end if;
+exception when insufficient_privilege then
+  raise warning 'Could not grant authenticated/service_role to %; see docs/DEPLOYMENT.md', current_user;
+end $$;
+
 -- Private schema for helpers. Not exposed via the Supabase Data API.
 create schema if not exists app;
 revoke all on schema app from public;
@@ -362,6 +376,11 @@ begin
   -- Allow cascading cleanup when an entire organization is deleted.
   if tg_op = 'DELETE' and not exists (select 1 from public.organizations where id = old.organization_id) then
     return old;
+  end if;
+  -- Allow the FK "ON DELETE SET NULL" when a user account is erased; nothing else may change.
+  if tg_op = 'UPDATE' and old.actor_user_id is not null and new.actor_user_id is null
+     and (to_jsonb(new) - 'actor_user_id') = (to_jsonb(old) - 'actor_user_id') then
+    return new;
   end if;
   raise exception 'audit_events is append-only' using errcode = '42501';
 end $$;

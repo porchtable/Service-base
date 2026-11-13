@@ -12,6 +12,7 @@ import { env, requireSetting } from "@/server/env";
 import { hashToken } from "@/server/tokens";
 import { EmailSendError, getEmailTransport, type EmailTransport } from "@/server/email/transport";
 import { estimateEmail } from "@/server/email/templates";
+import { recordWorkerRun } from "@/server/platform-config";
 
 export type FollowUpKind = "initial_delivery" | "automatic_reminder" | "manual_reminder";
 export type FollowUpStatus = "pending" | "processing" | "sent" | "failed" | "cancelled";
@@ -211,6 +212,7 @@ export async function processFollowUps(opts: { limit?: number; versionId?: strin
   if (!opts.versionId) {
     const expired = await withService((tx) => tx`select app.expire_overdue_estimates() as id`);
     summary.expired = expired.length;
+    await recordWorkerRun().catch(() => {}); // heartbeat for platform health
   }
   const jobs = await withService((tx) => tx<FollowUpRow[]>`
     select * from app.claim_follow_up_jobs(${opts.limit ?? 25}, ${workerId}, ${opts.versionId ?? null})`);

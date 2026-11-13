@@ -247,6 +247,12 @@ async function handleAuth(req: http.IncomingMessage, url: URL, body: Record<stri
     return { status: 204, json: null };
   }
 
+  if (m === "GET" && path.startsWith("/admin/users/")) {
+    const u = await findUserById(path.split("/").pop()!);
+    if (!u) throw new HttpError(404, "user_not_found", "User not found");
+    return { status: 200, json: userJson(u) };
+  }
+
   if (m === "DELETE" && path.startsWith("/admin/users/")) {
     const id = path.split("/").pop()!;
     await sql`delete from auth.users where id = ${id}`;

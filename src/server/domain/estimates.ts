@@ -12,6 +12,7 @@ import { conflict, forbidden, invalid, notFound } from "@/server/errors";
 import { generateToken } from "@/server/tokens";
 import { env } from "@/server/env";
 import { scheduleAfterSend } from "@/server/domain/followup-hooks";
+import { requireEntitlement } from "@/server/billing/entitlements";
 
 export type EstimateStatus = "draft" | "approved" | "sent" | "accepted" | "declined" | "expired" | "superseded";
 export const ESTIMATE_STATUSES: EstimateStatus[] = ["draft", "approved", "sent", "accepted", "declined", "expired", "superseded"];
@@ -509,6 +510,7 @@ export interface SendResult {
 export async function sendVersion(ctx: TenantCtx, versionId: string, opts: { email: boolean }): Promise<SendResult> {
   assertCan(ctx, "estimate.send");
   if (!z.uuid().safeParse(versionId).success) throw notFound("Estimate");
+  await requireEntitlement(ctx.organizationId, "Sending estimates");
   return withUser(ctx, async (tx) => {
     const [v] = await tx`
       select v.*, o.estimate_validity_days, c.email as customer_email

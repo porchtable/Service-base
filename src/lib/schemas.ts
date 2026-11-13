@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_UNIT_PRICE_CENTS, parseMoneyToCents } from "@/lib/money";
 
 /** Trimmed optional text: "" → undefined. */
 export const optText = (max: number) =>
@@ -141,3 +142,110 @@ export function formToObject(fd: FormData): Record<string, string | string[]> {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 2
+// ---------------------------------------------------------------------------
+
+export const moneyField = (label = "Price") =>
+  z
+    .string({ error: `${label} is required` })
+    .trim()
+    .transform((v, ctx) => {
+      const cents = parseMoneyToCents(v);
+      if (cents === null || cents > MAX_UNIT_PRICE_CENTS) {
+        ctx.addIssue({ code: "custom", message: `Enter ${label.toLowerCase()} like 129.00` });
+        return z.NEVER;
+      }
+      return cents;
+    });
+
+export const priceBookItemSchema = z.object({
+  name: reqText(160, "Service name"),
+  description: optText(2000),
+  category: optText(80),
+  sku: optText(60),
+  unitPrice: moneyField("Unit price"),
+  unit: reqText(30, "Unit"),
+  taxClass: z.enum(["taxable", "non_taxable"]),
+  isActive: z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean()),
+});
+
+export const JOB_STATUSES = ["new", "scheduled", "in_progress", "on_hold", "completed", "cancelled"] as const;
+export type JobStatus = (typeof JOB_STATUSES)[number];
+export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  new: "New",
+  scheduled: "Scheduled",
+  in_progress: "In progress",
+  on_hold: "On hold",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+const optUuid = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v ? v : undefined))
+  .pipe(z.uuid("Invalid selection").optional());
+
+/** datetime-local value ("2026-11-20T09:30") interpreted in the organization's time zone by the caller. */
+const optLocalDateTime = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v ? v : undefined))
+  .pipe(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Enter a valid date and time").optional());
+
+export const jobSchema = z.object({
+  customerId: z.uuid("Choose a customer"),
+  title: reqText(160, "Job title"),
+  status: z.enum(JOB_STATUSES).default("new"),
+  serviceAddressLine1: optText(200),
+  serviceAddressLine2: optText(200),
+  serviceCity: optText(100),
+  serviceRegion: optText(100),
+  servicePostalCode: optText(20),
+  equipmentType: optText(120),
+  equipmentMake: optText(120),
+  equipmentModel: optText(120),
+  equipmentSerial: optText(120),
+  equipmentAgeYears: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v, ctx) => {
+      if (!v) return undefined;
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 150) {
+        ctx.addIssue({ code: "custom", message: "Enter whole years between 0 and 150" });
+        return z.NEVER;
+      }
+      return n;
+    }),
+  equipmentNotes: optText(2000),
+  description: optText(5000),
+  technicianObservations: optText(10000),
+  internalNotes: optText(5000),
+  assignedTechnicianId: optUuid,
+  appointmentLocal: optLocalDateTime,
+});
+export type JobInput = z.infer<typeof jobSchema>;
+
+/** Fields a technician may update on a job assigned to them. */
+export const technicianJobUpdateSchema = jobSchema.pick({
+  status: true,
+  serviceAddressLine1: true,
+  serviceAddressLine2: true,
+  serviceCity: true,
+  serviceRegion: true,
+  servicePostalCode: true,
+  equipmentType: true,
+  equipmentMake: true,
+  equipmentModel: true,
+  equipmentSerial: true,
+  equipmentAgeYears: true,
+  equipmentNotes: true,
+  description: true,
+  technicianObservations: true,
+});

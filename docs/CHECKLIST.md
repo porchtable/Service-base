@@ -31,10 +31,23 @@ limited (reason given) · ⬜ not started · ⛔ blocked on an external account/
   in Phase 4.
 
 ## Phase 2 — Jobs, technicians, attachments, price book
-- ⬜ jobs, job_attachments, price_book_items migrations + RLS + cross-org composite FKs
-- ⬜ Job CRUD, statuses, technician assignment, technician column guard
-- ⬜ Private photo uploads (Supabase Storage, signed URLs)
-- ⬜ Price book CRUD (integer cents)
+- ✅ Migration `20261113000200_jobs_pricebook.sql`: jobs, job_attachments, price_book_items,
+  private `job-attachments` bucket (no browser storage policies), RLS
+- ✅ Cross-organization references impossible: composite FKs for customer, technician
+  (membership), attachments (+ storage path CHECK) — verified even as superuser
+- ✅ Jobs: create/edit/delete, statuses, per-company job numbers, time-zone-aware
+  appointments, equipment details, description, technician observations, internal notes
+- ✅ Technician assignment; technicians limited to field-work columns on their own jobs
+  (DB trigger + app checks); internal notes hidden from technicians
+- ✅ Private photos: magic-byte content validation, 15 MB limit, server-side authorization,
+  2-minute signed URLs via an authorized redirect route, orphan cleanup
+- ✅ Price book: integer-cent prices, units, categories, tax class, active/inactive,
+  owner/admin-only edits, price-change audit trail
+- ✅ Exact money math module (BigInt scaled quantities, half-away-from-zero rounding)
+- ✅ Tests: +20 unit/DB tests (money, time zones, cross-org FKs, technician guard, price book
+  RLS) and +1 e2e (invite technician → assignment → observations → photo upload/view,
+  content-sniff rejection, cross-company/anonymous photo access denied)
+- 🟡 Storage verified against the test-only emulator; re-verify on real Supabase Storage.
 
 ## Phase 3 — Estimates
 - ⬜ AI draft generation (structured output, price-book matching, flags), notes preserved on failure
